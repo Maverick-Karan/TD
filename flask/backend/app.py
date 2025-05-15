@@ -12,7 +12,7 @@ db_name = os.getenv('MONGO_DB_NAME')
 collection_name = os.getenv('MONGO_COLLECTION_NAME')
 
 # Initialize Flask app with custom template folder path
-app = Flask(__name__, template_folder='../frontend')
+app = Flask(__name__)
 
 ########################################################
 # Get the absolute path to data.json
@@ -34,34 +34,22 @@ db = client[db_name]
 collection = db[collection_name]
 
 
-# Route to render the form page
-@app.route('/')
-def home():
-    return render_template('index.html')
-
 # Route to handle form submission
 @app.route('/submit', methods=['POST'])
 def submit():
-    # Get form data
-    name = request.form.get('name')
-    age = request.form.get('age')
+    # Expecting JSON data, not form data
+    data = request.get_json()
+    name = data.get('name')
+    age = data.get('age')
 
-    # Check if both fields are provided
     if not name or not age:
-        return render_template('index.html', error="Both name and age are required!")
-    
-    # Insert the data into MongoDB (regardless of type)
-    collection.insert_one({'name': name, 'age': age})
-    
+        return jsonify({'error': 'Name and age are required'}), 400
+
     # Redirect to the success page after successful submission
-    return redirect(url_for('success'))
-
-# Route to render success page
-@app.route('/success')
-def success():
-    return render_template('success.html')
-
+    collection.insert_one({'name': name, 'age': age})
+    return jsonify({'message': 'Data inserted successfully'}), 200
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=3000,debug=True)
+    
